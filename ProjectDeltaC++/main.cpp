@@ -60,6 +60,7 @@ public:
     
     double u;
     double timeInSim;
+    double offAngle;
     int xResult;
     int yResult;
     int timeResult;
@@ -125,6 +126,7 @@ void simulate::initSim(){
     
     theta = thetaStart;
     timeInSim = 0;
+    offAngle = 0;
     
     if(rand()% 2 == 0)
     {
@@ -187,6 +189,7 @@ void simulate::evalNewOmega(simulate* boat){
 
 void simulate::evalNewTheta(simulate* boat)
 {
+    double check = boat->theta;
     boat->theta = boat->theta + (boat->omega * dT);
     if(boat->theta > 2*pi)
     {
@@ -196,18 +199,21 @@ void simulate::evalNewTheta(simulate* boat)
     {
         boat->theta = boat->theta + (2*pi);
     }
+    if(fabs(check-boat->theta)>.01){
+        boat->offAngle++;
+    }
 }
 
 int simulate::evalFitness(simulate* boat){
     int fitness = -1;
     if(boat->xResult == 1 || boat->yResult == 1){
-        fitness = fitness - boat->timeInSim - (1000-boat->boatXLocmin1)-(1000-boat->boatYLocmin1);
+        fitness = fitness - boat->timeInSim - (1000-boat->boatXLocmin1)-(1000-boat->boatYLocmin1)-boat->offAngle ;
     }
     else if(boat->xResult == 2){
-        fitness =  100000 - boat->timeInSim;
+        fitness =  100000 - boat->timeInSim-boat->offAngle ;
     }
     else if(boat->xResult == 4){
-        fitness = fitness - 100000;
+        fitness = fitness - 100000- boat->offAngle ;
     }
     return fitness;
 }
@@ -231,6 +237,7 @@ void simulate::reset(simulate* boat,int check){
     boat->boatXLoc = boat->boatStartX;
     boat->boatYLoc = boat->boatStartY;
     boat->timeInSim = 0;
+    boat->offAngle = 0;
     boat->omega = boat->omegaStart;
     boat->theta = boat->thetaStart;
     boat->xResult = 5;
@@ -312,7 +319,6 @@ vector<policy> downSelect(vector<policy>* mutatedPopulation){
 void policy::initPolicy(vector<double> nnWeights){
     weights= nnWeights;
     fitness = -100000;
-
 }
 
 vector<policy> replicatePop(vector<policy>* population){
@@ -396,17 +402,32 @@ int main() {
         population.clear();
         population = downSelect(&mutatedPopulation);
         if(i == numGens-1){
-            int check = -5;
+            int checkBest = -5;
             int bestLoc;
+            int checkWorst = 5;
+            int worstLoc;
             for(int k = 0; k<popSize; k++){
-                if(population.at(k).fitness>check){
-                    check = population.at(k).fitness;
+                if(population.at(k).fitness>checkBest){
+                    checkBest = population.at(k).fitness;
                     bestLoc= k;
                 }
+                if(population.at(k).fitness<checkWorst){
+                    checkWorst = population.at(k).fitness;
+                    worstLoc= k;
+                }
             }
-
+            for(int p=0;p<2;p++){
             boat.reset(&boat,0);
-                NN.set_weights(population.at(bestLoc).weights, true);
+                int position;
+                if(p==0)
+                {
+                    position = bestLoc;
+                }
+                if(p==1)
+                {
+                    position = worstLoc;
+                }
+                NN.set_weights(population.at(position).weights, true);
                 while(boat.xResult !=1 && boat.xResult !=2 && boat.xResult !=4 && boat.yResult != 1)
                 {
                     /// give NN the state
@@ -424,16 +445,14 @@ int main() {
                     yValues.push_back(boat.boatYLoc);
                     thetaValues.push_back(boat.theta);
                 }
+            }
             ofstream boatPath;
             boatPath.open("BoatPath_File");
             for(int c=0;c<xValues.size();c++)
             {
                 boatPath << xValues.at(c) << "\t" << yValues.at(c)<< "\t" << thetaValues.at(c)<< "\n";
-                
             }
-            
             boatPath.close();
-            
         }
     }
 }
