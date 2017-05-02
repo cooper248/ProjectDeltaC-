@@ -102,12 +102,12 @@ vector<policy> initPop(neural_network* NN){
 void simulate::initSim(){
     srand(time(NULL));
 
-    //boatStartX = 600 + rand()% 200; //place boat anywhere from 250 to 750
-    boatStartX = 550;
+    boatStartX = 400 + rand()% 300; //place boat anywhere from 250 to 750
+    //boatStartX = 55;
     boatXLoc= boatStartX;
     boatXLocmin1 = boatXLoc;
-    //boatStartY = 600 + rand()% 200; //place boat anywhere from 250 to 750
-    boatStartY = 750;
+    boatStartY = 400 + rand()% 300; //place boat anywhere from 250 to 750
+    //boatStartY = 75;
     boatYLoc= boatStartY;
     boatYLocmin1 = boatYLoc;
     goalTopXLoc = 950;
@@ -352,6 +352,7 @@ int main() {
     vector<double> xValues;
     vector<double> yValues;
     vector<double> thetaValues;
+    time_t time1(time_t *time);
     
     numGens = promptUserStart();
     
@@ -389,8 +390,6 @@ int main() {
                 boat.u = output;
                 /// simulate a time step
                 boat.simData(&boat);
-                if(boat.xResult != 3){
-                }
             }
             mutatedPopulation.at(j).fitness =  boat.evalFitness(&boat);
             cout<< "Fitness: " << mutatedPopulation.at(j).fitness <<endl;
@@ -402,7 +401,7 @@ int main() {
         population.clear();
         population = downSelect(&mutatedPopulation);
         if(i == numGens-1){
-            int checkBest = -5;
+            int checkBest = -500000;
             int bestLoc;
             int checkWorst = 5;
             int worstLoc;
@@ -447,8 +446,6 @@ int main() {
                 }
             }
             ofstream boatPath;
-            cout<<"here"<<endl;
-            
             boatPath.open("BoatPath_File");
             for(int c=0;c<xValues.size();c++)
             {
