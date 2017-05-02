@@ -447,6 +447,8 @@ int main() {
                 }
             }
             ofstream boatPath;
+            cout<<"here"<<endl;
+            
             boatPath.open("BoatPath_File");
             for(int c=0;c<xValues.size();c++)
             {
